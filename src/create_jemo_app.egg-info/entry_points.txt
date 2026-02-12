@@ -1,0 +1,2 @@
+[console_scripts]
+jemo-admin = jemo_admin.main:app

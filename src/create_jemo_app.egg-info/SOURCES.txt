@@ -1,0 +1,12 @@
+README.md
+pyproject.toml
+src/create_jemo_app.egg-info/PKG-INFO
+src/create_jemo_app.egg-info/SOURCES.txt
+src/create_jemo_app.egg-info/dependency_links.txt
+src/create_jemo_app.egg-info/entry_points.txt
+src/create_jemo_app.egg-info/requires.txt
+src/create_jemo_app.egg-info/top_level.txt
+src/jemo_admin/main.py
+src/jemo_admin/generators/backend.py
+src/jemo_admin/generators/frontend.py
+src/jemo_admin/generators/vcs.py

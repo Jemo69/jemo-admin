@@ -1,0 +1,24 @@
+[project]
+name = "create-jemo-app"
+version = "0.1.0"
+description = "A CLI tool to scaffold modern web projects with FastAPI, Django, Convex, Next.js, SvelteKit, or TanStack Start."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "questionary>=2.1.1",
+    "rich>=14.3.2",
+    "typer>=0.23.0",
+]
+
+[project.scripts]
+jemo-admin = "jemo_admin.main:app"
+
+[tool.uv.workspace]
+members = [
+    "test/test-app/backend",
+    "test/my-jemo-app/backend",
+    "test/reproduce_error/backend",
+]
+[pypi]
+username = "__token__"
+password= "pypi-AgEIcHlwaS5vcmcCJDBkYjU5ODE5LWIyOWItNGQzZC05NDY4LWFiNGNmMjIyNzIzOAACKlszLCJmY2ZkMmU0OS0zZTEyLTRjMDQtODU3NC03NDNkYmM3NDlhZGQiXQAABiDG2OJBYI3_C3eHDpyBRZ8YzfRFwGGxD3KpgfQ3ATnuWQ"
