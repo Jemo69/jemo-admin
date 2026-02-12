@@ -21,7 +21,7 @@ You can install `jemo-admin` using `pipx`:
 ```bash
 pipx install .
 # Or from a git repo:
-# pipx install git+https://github.com/yourusername/create-jemo-app.git
+# pipx install git+https://github.com/Jemo69/create-jemo-app.git
 ```
 
 ## Usage
