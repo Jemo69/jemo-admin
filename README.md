@@ -45,3 +45,4 @@ Follow the interactive prompts to select your backend and frontend framework.
 - **Python 3.12+**
 - **Bun** (for frontend package management)
 - **UV** (for Python package management)
+Note : it does not work on Windows.
