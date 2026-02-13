@@ -1,6 +1,6 @@
 [project]
-name = "create-jemo-app"
-version = "0.1.3"
+name = "jemo-admin"
+version = "0.1.4"
 description = "A CLI tool to scaffold modern web projects with FastAPI, Django, Convex, Next.js, SvelteKit, or TanStack Start."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -13,12 +13,11 @@ dependencies = [
 [project.scripts]
 jemo-admin = "jemo_admin.main:app"
 
-[tool.uv.workspace]
-members = [
-    "test/test-app/backend",
-    "test/my-jemo-app/backend",
-    "test/reproduce_error/backend",
-]
-[pypi]
-username = "__token__"
-password= "pypi-AgEIcHlwaS5vcmcCJDBkYjU5ODE5LWIyOWItNGQzZC05NDY4LWFiNGNmMjIyNzIzOAACKlszLCJmY2ZkMmU0OS0zZTEyLTRjMDQtODU3NC03NDNkYmM3NDlhZGQiXQAABiDG2OJBYI3_C3eHDpyBRZ8YzfRFwGGxD3KpgfQ3ATnuWQ"
+[project.urls]
+Homepage = "https://github.com/jemo/jemo-admin"
+Repository = "https://github.com/jemo/jemo-admin"
+Issues = "https://github.com/jemo/jemo-admin/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
