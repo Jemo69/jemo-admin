@@ -37,6 +37,6 @@ def init_jj(project_dir: Path):
     )
 
     # 'jj git init' creates a repo backed by git, which is most common for interop.
-    run_command(["jj", "git", "init"], cwd=project_dir)
+    run_command(["jj", "git", "init" ,"--colocate"], cwd=project_dir)
 
     console.print("[green]Jujutsu initialized.[/green]")
