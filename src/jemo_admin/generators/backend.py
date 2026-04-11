@@ -51,6 +51,7 @@ def create_fastapi(project_dir: Path, separate_folders: bool = True):
 from fastapi import FastAPI
 from tortoise import Tortoise
 from tortoise.contrib.fastapi import register_tortoise
+from .tortoise_conf import TORTOISE_ORM
 
 app = FastAPI(title="Jemo Admin API")
 
@@ -59,15 +60,6 @@ async def read_root():
     return {"message": "Welcome to Jemo Admin FastAPI Backend with Tortoise ORM!"}
 
 # Database Configuration
-TORTOISE_ORM = {
-    "connections": {"default": "sqlite://db.sqlite3"},
-    "apps": {
-        "models": {
-            "models": ["aerich.models", "models"],  # Add your models here
-            "default_connection": "default",
-        },
-    },
-}
 
 register_tortoise(
     app,
@@ -106,6 +98,8 @@ TORTOISE_ORM = {
 }
 """
     (backend_dir / "tortoise_conf.py").write_text(tortoise_conf_content)
+    run_command(["uv", "run", "aerich", "init", "-t", "tortoise_conf.TORTOISE_ORM"])
+    run_command(["uv", "run", "aerich", "init-db"])
 
     console.print("[green]FastAPI backend setup complete![/green]")
 
