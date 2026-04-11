@@ -27,7 +27,7 @@ def info():
     """
     Show information about the CLI.
     """
-    console.print(Panel.fit("Jemo Admin CLI v0.1.0", border_style="cyan"))
+    console.print(Panel.fit("Jemo Admin CLI v0.1.8", border_style="cyan"))
     console.print("Powered by [bold]Typer[/bold] and [bold]Rich[/bold].")
 
 
@@ -165,8 +165,6 @@ def create(
     if is_fastapi:
         console.print("\n  [bold cyan]Backend (FastAPI):[/bold cyan]")
         console.print("  cd backend")
-        console.print("  uv run aerich init -t tortoise_conf.TORTOISE_ORM")
-        console.print("  uv run aerich init-db")
         console.print("  uv run uvicorn main:app --reload")
     elif is_django:
         console.print("\n  [bold cyan]Backend (Django):[/bold cyan]")

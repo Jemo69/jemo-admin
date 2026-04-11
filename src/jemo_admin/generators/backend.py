@@ -46,12 +46,15 @@ def create_fastapi(project_dir: Path, separate_folders: bool = True):
         ["uv", "add", "fastapi", "uvicorn", "tortoise-orm", "aerich"], cwd=backend_dir
     )
 
+    # Create __init__.py to make it a package
+    (backend_dir / "__init__.py").touch()
+
     # Create main.py
     main_py_content = """
 from fastapi import FastAPI
 from tortoise import Tortoise
 from tortoise.contrib.fastapi import register_tortoise
-from .tortoise_conf import TORTOISE_ORM
+from tortoise_conf import TORTOISE_ORM
 
 app = FastAPI(title="Jemo Admin API")
 
@@ -98,8 +101,11 @@ TORTOISE_ORM = {
 }
 """
     (backend_dir / "tortoise_conf.py").write_text(tortoise_conf_content)
-    run_command(["uv", "run", "aerich", "init", "-t", "tortoise_conf.TORTOISE_ORM"])
-    run_command(["uv", "run", "aerich", "init-db"])
+    run_command(
+        ["uv", "run", "aerich", "init", "-t", "tortoise_conf.TORTOISE_ORM"],
+        cwd=backend_dir,
+    )
+    run_command(["uv", "run", "aerich", "init-db"], cwd=backend_dir)
 
     console.print("[green]FastAPI backend setup complete![/green]")
 
@@ -146,11 +152,8 @@ def create_convex_standalone(project_dir: Path):
         run_command(["bun", "init", "-y"], cwd=project_dir)
 
     run_command(["bun", "add", "convex"], cwd=project_dir)
-    run_command(
-        ["npx", "convex", "dev"], cwd=project_dir
-    )  # This is interactive usually!
-    # Wait, 'npx convex dev' is interactive and blocking. We probably shouldn't run it here.
-    # We should just install it and tell user to run it.
+    # run_command(["npx", "convex", "dev"], cwd=project_dir)
+    # This is interactive and blocking, so we let the user run it manually.
 
     console.print(
         "[green]Convex setup complete! Run 'npx convex dev' to start.[/green]"
