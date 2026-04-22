@@ -1,6 +1,6 @@
 [project]
 name = "jemo-admin"
-version = "0.1.8"
+version = "0.2.0"
 description = "A CLI tool to scaffold modern web projects with FastAPI, Django, Convex, Next.js, SvelteKit, or TanStack Start."
 readme = "README.md"
 requires-python = ">=3.12"
