@@ -5,7 +5,7 @@ def create_agentsmd(project_dir: Path):
     """
     Create an agentsmd.md file in the project directory.
     """
-    agentsmd_path = project_dir / "agents.md"
+    agentsmd_path = project_dir / "AGENTS.md"
     agentsmd_path.touch()
 
     with open(agentsmd_path, "w") as f:
