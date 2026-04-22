@@ -157,6 +157,10 @@ def create(
         vcs_gen.init_git(project_dir)
     elif "Jujutsu" in vcs_choice:
         vcs_gen.init_jj(project_dir)
+    from jemo_admin.generators import agentsmd
+
+    console.print("\n[bold cyan]Agents.md:[/bold cyan]")
+    agentsmd.create_agentsmd(project_dir)
 
     console.print(f"\n[bold green]Successfully created {project_name}![/bold green]")
     console.print("\n[bold]To get started:[/bold]")
