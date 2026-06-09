@@ -22,28 +22,27 @@ def run_command(command, cwd=None, shell=False):
 
 
 def create_fastapi(project_dir: Path, separate_folders: bool = True):
-    """Scaffold a FastAPI project with Tortoise ORM and Aerich."""
+    """Scaffold a FastAPI project with Tortoise ORM."""
 
     backend_dir = project_dir / "backend"
     if separate_folders:
         backend_dir.mkdir(parents=True, exist_ok=True)
     else:
-        backend_dir = project_dir  # If not separate folders, use project dir directly (uncommon for backend+frontend combo)
+        backend_dir = project_dir
 
     console.print(
         f"[bold cyan]Initializing FastAPI backend in {backend_dir}...[/bold cyan]"
     )
 
     # Initialize UV project
-    # Use --no-workspace to ensure we create a standalone project
     run_command(["uv", "init", "--app", "--no-workspace"], cwd=backend_dir)
 
     # Add dependencies
     console.print(
-        "[bold]Adding dependencies: fastapi, uvicorn, tortoise-orm, aerich...[/bold]"
+        "[bold]Adding dependencies: fastapi, uvicorn, tortoise-orm...[/bold]"
     )
     run_command(
-        ["uv", "add", "fastapi", "uvicorn", "tortoise-orm", "aerich"], cwd=backend_dir
+        ["uv", "add", "fastapi", "uvicorn", "tortoise-orm>=1.0.0"], cwd=backend_dir
     )
 
     # Create __init__.py to make it a package
@@ -53,23 +52,25 @@ def create_fastapi(project_dir: Path, separate_folders: bool = True):
     main_py_content = """
 from fastapi import FastAPI
 from tortoise import Tortoise
-from tortoise.contrib.fastapi import register_tortoise
-from tortoise_conf import TORTOISE_ORM
+from contextlib import asynccontextmanager
 
-app = FastAPI(title="Jemo Admin API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await Tortoise.init(
+        db_url="sqlite://db.sqlite3",
+        modules={"models": ["models"]}
+    )
+    yield
+    await Tortoise.close_connections()
+
+
+app = FastAPI(title="Jemo Admin API", lifespan=lifespan)
+
 
 @app.get("/")
 async def read_root():
     return {"message": "Welcome to Jemo Admin FastAPI Backend with Tortoise ORM!"}
-
-# Database Configuration
-
-register_tortoise(
-    app,
-    config=TORTOISE_ORM,
-    generate_schemas=True,
-    add_exception_handlers=True,
-)
 """
     (backend_dir / "main.py").write_text(main_py_content)
 
@@ -88,24 +89,21 @@ class User(models.Model):
 """
     (backend_dir / "models.py").write_text(models_py_content)
 
-    # Create tortoise_conf.py for Aerich
+    # Create tortoise_conf.py
     tortoise_conf_content = """
 TORTOISE_ORM = {
     "connections": {"default": "sqlite://db.sqlite3"},
     "apps": {
         "models": {
-            "models": ["aerich.models", "models"],
+            "models": ["models"],
             "default_connection": "default",
         },
     },
 }
 """
     (backend_dir / "tortoise_conf.py").write_text(tortoise_conf_content)
-    run_command(
-        ["uv", "run", "aerich", "init", "-t", "tortoise_conf.TORTOISE_ORM"],
-        cwd=backend_dir,
-    )
-    run_command(["uv", "run", "aerich", "init-db"], cwd=backend_dir)
+    run_command(["uv", "run", "python", "-m", "tortoise", "makemigrations"], cwd=backend_dir)
+    run_command(["uv", "run", "python", "-m", "tortoise", "migrate"], cwd=backend_dir)
 
     console.print("[green]FastAPI backend setup complete![/green]")
 

@@ -13,6 +13,10 @@ app = typer.Typer(
 )
 console = Console()
 
+VALID_BACKENDS = ["fastapi", "django", "convex", "none"]
+VALID_FRONTS = ["nextjs", "sveltekit", "tanstack", "none"]
+VALID_VCS = ["git", "jj", "none"]
+
 
 @app.callback()
 def main():
@@ -34,8 +38,13 @@ def info():
 @app.command()
 def create(
     project_name: str = typer.Argument(
-        None, help="The name of the project directory (optional)."
+        ..., help="Project directory name (use '.' for current dir)"
     ),
+    backend: str = typer.Option(None, help="Backend: fastapi, django, convex, none"),
+    frontend: str = typer.Option(None, help="Frontend: nextjs, sveltekit, tanstack, none"),
+    vcs: str = typer.Option(None, help="VCS: git, jj, none"),
+    dir: Path = typer.Option(None, help="Output directory (absolute or relative)"),
+    agents: bool = typer.Option(None, help="Generate AGENTS.md"),
 ):
     """
     Create a new project with your choice of backend and frontend.
@@ -47,120 +56,141 @@ def create(
         )
     )
 
-    # 1. Project Name / Directory
-    if not project_name:
-        project_name = questionary.text(
-            "What is your project name?", default="my-jemo-app"
-        ).ask()
+    interactive = any(v is None for v in [backend, frontend, vcs, agents])
 
-    if not project_name:
-        console.print("[red]Project name is required![/red]")
+    # Validate choices
+    if backend and backend not in VALID_BACKENDS:
+        console.print(f"[red]Invalid backend: {backend}. Choose from: {', '.join(VALID_BACKENDS)}[/red]")
+        raise typer.Exit(code=1)
+    if frontend and frontend not in VALID_FRONTS:
+        console.print(f"[red]Invalid frontend: {frontend}. Choose from: {', '.join(VALID_FRONTS)}[/red]")
+        raise typer.Exit(code=1)
+    if vcs and vcs not in VALID_VCS:
+        console.print(f"[red]Invalid vcs: {vcs}. Choose from: {', '.join(VALID_VCS)}[/red]")
         raise typer.Exit(code=1)
 
     # Resolve project directory
-    project_dir = Path.cwd() / project_name
+    if project_name == ".":
+        project_dir = Path.cwd()
+    elif dir:
+        project_dir = Path(dir).resolve() / project_name
+    else:
+        project_dir = Path.cwd() / project_name
 
     if project_dir.exists() and any(project_dir.iterdir()):
-        overwrite = questionary.confirm(
-            f"Directory '{project_name}' is not empty. Do you want to continue (files may be overwritten)?"
-        ).ask()
-        if not overwrite:
-            console.print("[yellow]Aborted.[/yellow]")
-            raise typer.Exit(code=0)
+        if interactive:
+            overwrite = questionary.confirm(
+                f"Directory '{project_dir}' is not empty. Do you want to continue (files may be overwritten)?"
+            ).ask()
+            if not overwrite:
+                console.print("[yellow]Aborted.[/yellow]")
+                raise typer.Exit(code=0)
+        else:
+            console.print(f"[red]Directory not empty: {project_dir}[/red]")
+            raise typer.Exit(code=1)
 
-    # 2. Select Backend
-    backend_choice = questionary.select(
-        "Select your backend framework:",
-        choices=[
-            "FastAPI (Tortoise ORM + Aerich)",
-            "Django",
-            "Convex (Serverless)",
-            "None (Frontend Only)",
-        ],
-    ).ask()
+    # Interactive prompts for missing values
+    if interactive:
+        if not backend:
+            backend = questionary.select(
+                "Select your backend framework:",
+                choices=["fastapi", "django", "convex", "none"],
+            ).ask()
+        if not frontend:
+            frontend = questionary.select(
+                "Select your frontend framework:",
+                choices=["nextjs", "sveltekit", "tanstack", "none"],
+            ).ask()
+        if not vcs:
+            vcs = questionary.select(
+                "Select your Version Control System:",
+                choices=["git", "jj", "none"],
+            ).ask()
+        if agents is None:
+            agents = questionary.confirm("Do you want to create an AGENTS.md?").ask()
 
-    # 3. Select Frontend
-    frontend_choice = questionary.select(
-        "Select your frontend framework:",
-        choices=["Next.js", "SvelteKit", "TanStack Start", "None (Backend Only)"],
-    ).ask()
+    if not backend or not frontend or not vcs:
+        console.print("[red]Backend, frontend, and vcs are required![/red]")
+        raise typer.Exit(code=1)
 
-    # 4. Select Version Control
-    vcs_choice = questionary.select(
-        "Select your Version Control System:",
-        choices=["Git", "Jujutsu (jj)", "None"],
-    ).ask()
-
-    if not backend_choice or not frontend_choice or not vcs_choice:
-        # Handle cancellation (Ctrl+C)
-        console.print("[yellow]Operation cancelled.[/yellow]")
-        raise typer.Exit(code=0)
-
-    if "None" in backend_choice and "None" in frontend_choice:
+    if backend == "none" and frontend == "none":
         console.print("[red]You must select at least a backend or a frontend![/red]")
         raise typer.Exit(code=1)
 
-    # Confirm Plan
+    # Confirm plan
+    backend_label = backend if backend != "none" else "None (Frontend Only)"
+    frontend_label = frontend if frontend != "none" else "None (Backend Only)"
+    vcs_label = vcs if vcs != "none" else "None"
+
     console.print(f"\n[bold green]Plan:[/bold green]")
     console.print(f"  Project: [cyan]{project_name}[/cyan]")
-    console.print(f"  Backend: [cyan]{backend_choice}[/cyan]")
-    console.print(f"  Frontend: [cyan]{frontend_choice}[/cyan]")
-    console.print(f"  VCS:     [cyan]{vcs_choice}[/cyan]")
+    console.print(f"  Backend: [cyan]{backend_label}[/cyan]")
+    console.print(f"  Frontend: [cyan]{frontend_label}[/cyan]")
+    console.print(f"  VCS:     [cyan]{vcs_label}[/cyan]")
 
-    if not questionary.confirm("Does this look correct?").ask():
-        console.print("[yellow]Aborted.[/yellow]")
-        raise typer.Exit(code=0)
+    if interactive:
+        if not questionary.confirm("Does this look correct?").ask():
+            console.print("[yellow]Aborted.[/yellow]")
+            raise typer.Exit(code=0)
 
-    # Create Project Directory
+    # Create project directory
     if not project_dir.exists():
         project_dir.mkdir(parents=True)
 
     console.print("\n[bold]Scaffolding project...[/bold]")
 
-    # Import generators here to avoid circular imports or issues before structure is ready
+    # Import generators
     from jemo_admin.generators import backend as backend_gen
     from jemo_admin.generators import frontend as frontend_gen
     from jemo_admin.generators import vcs as vcs_gen
+    from jemo_admin.generators import agentsmd
 
-    # Determine types
-    is_convex = "Convex" in backend_choice
-    is_fastapi = "FastAPI" in backend_choice
-    is_django = "Django" in backend_choice
+    is_fastapi = backend == "fastapi"
+    is_django = backend == "django"
+    is_convex = backend == "convex"
 
-    # Backend Generation
+    # Backend generation
     if is_fastapi:
         backend_gen.create_fastapi(project_dir)
     elif is_django:
         backend_gen.create_django(project_dir)
-    elif is_convex and "None" in frontend_choice:
-        # Standalone Convex (rare but possible)
+    elif is_convex and frontend == "none":
         backend_gen.create_convex_standalone(project_dir)
 
-    # Frontend Generation
+    # Frontend generation
     frontend_subfolder = "frontend" if (is_fastapi or is_django) else "."
 
-    if "Next.js" in frontend_choice:
+    if frontend == "nextjs":
         frontend_gen.create_nextjs(
             project_dir, subfolder=frontend_subfolder, use_convex=is_convex
         )
-    elif "SvelteKit" in frontend_choice:
+    elif frontend == "sveltekit":
         frontend_gen.create_sveltekit(
             project_dir, subfolder=frontend_subfolder, use_convex=is_convex
         )
-    elif "TanStack" in frontend_choice:
+    elif frontend == "tanstack":
         frontend_gen.create_tanstack(
             project_dir, subfolder=frontend_subfolder, use_convex=is_convex
         )
 
-    # VCS Initialization
-    if "Git" in vcs_choice:
-        vcs_gen.init_git(project_dir)
-    elif "Jujutsu" in vcs_choice:
-        vcs_gen.init_jj(project_dir)
-    from jemo_admin.generators import agentsmd
+    # AGENTS.md
+    if agents:
+        agentsmd.create_agentsmd(
+            project_dir,
+            is_fastapi,
+            is_django,
+            is_convex,
+            frontend,
+            vcs,
+        )
 
-    console.print("\n[bold cyan]Agents.md:[/bold cyan]")
-    agentsmd.create_agentsmd(project_dir)
+    # VCS initialization
+    if vcs == "git":
+        vcs_gen.init_git(project_dir)
+    elif vcs == "jj":
+        vcs_gen.init_jj(project_dir)
+
+    console.print("\n[bold cyan]AGENTS.md:[/bold cyan]")
 
     console.print(f"\n[bold green]Successfully created {project_name}![/bold green]")
     console.print("\n[bold]To get started:[/bold]")
@@ -176,12 +206,10 @@ def create(
         console.print("  uv run python manage.py migrate")
         console.print("  uv run python manage.py runserver")
 
-    if "None" not in frontend_choice:
+    if frontend != "none":
         console.print("\n  [bold cyan]Frontend:[/bold cyan]")
         if is_fastapi or is_django:
             console.print("  cd ../frontend")
-        # If single folder (Convex/None backend), we are already in root (or just cd into it initially)
-
         console.print("  bun install")
         if is_convex:
             console.print("  npx convex dev")
