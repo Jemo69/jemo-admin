@@ -38,9 +38,7 @@ def create_fastapi(project_dir: Path, separate_folders: bool = True):
     run_command(["uv", "init", "--app", "--no-workspace"], cwd=backend_dir)
 
     # Add dependencies
-    console.print(
-        "[bold]Adding dependencies: fastapi, uvicorn, tortoise-orm...[/bold]"
-    )
+    console.print("[bold]Adding dependencies: fastapi, uvicorn, tortoise-orm...[/bold]")
     run_command(
         ["uv", "add", "fastapi", "uvicorn", "tortoise-orm>=1.0.0"], cwd=backend_dir
     )
@@ -52,14 +50,17 @@ def create_fastapi(project_dir: Path, separate_folders: bool = True):
     main_py_content = """
 from fastapi import FastAPI
 from tortoise import Tortoise
+from tortoise.contrib.fastapi import RegisterTortoise
 from contextlib import asynccontextmanager
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await Tortoise.init(
+    with async RegisterTortoise(
+        app,
         db_url="sqlite://db.sqlite3",
         modules={"models": ["models"]}
+
     )
     yield
     await Tortoise.close_connections()
@@ -102,7 +103,9 @@ TORTOISE_ORM = {
 }
 """
     (backend_dir / "tortoise_conf.py").write_text(tortoise_conf_content)
-    run_command(["uv", "run", "python", "-m", "tortoise", "makemigrations"], cwd=backend_dir)
+    run_command(
+        ["uv", "run", "python", "-m", "tortoise", "makemigrations"], cwd=backend_dir
+    )
     run_command(["uv", "run", "python", "-m", "tortoise", "migrate"], cwd=backend_dir)
 
     console.print("[green]FastAPI backend setup complete![/green]")
